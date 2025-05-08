@@ -1,0 +1,8 @@
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          show-components: always
+        liveness:
+          show-components: always
