@@ -12,6 +12,8 @@ on:
       - "main"
       - "app1"
       - "app2"
+      - "app3"
+      - "app4"
 env:
   APP_NAME: grr-test
 jobs:
