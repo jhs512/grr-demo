@@ -12,6 +12,7 @@ on:
       - "main"
       - "app1"
       - "app2"
+      - "app3"
 env:
   APP_NAME: grr-test
 jobs:
@@ -96,7 +97,6 @@ jobs:
           echo "DEPLOYMENT_NAME=${{ env.APP_NAME }}-${GITHUB_REF_NAME}-deployment" >> $GITHUB_ENV
           echo "CONTAINER_NAME=${{ env.APP_NAME }}-${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
-      - name: 이미지 업데이트 및 출력
+      - name: 이미지 업데이트
         run: |
-          echo "kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.CONTAINER_NAME }}=ghcr.io/${{ env.OWNER_LC }}/${{ env.APP_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }}"
           kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.CONTAINER_NAME }}=ghcr.io/${{ env.OWNER_LC }}/${{ env.APP_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }}
