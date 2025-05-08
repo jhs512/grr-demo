@@ -15,8 +15,11 @@ on:
       - "app3"
       - "app4"
       - "app5"
+
 env:
   APP_NAME: grr-test
+  APP_COUNT: 7  # 배포할 app 개수 (app1 ~ app7)
+
 jobs:
   makeTagAndRelease:
     runs-on: ubuntu-latest
@@ -83,6 +86,9 @@ jobs:
     name: 쿠버네티스 배포
     needs: [ makeTagAndRelease, buildImageAndPush ]
     runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.ref_name }}
+      APP_COUNT: ${{ env.APP_COUNT }}
     steps:
       - uses: azure/k8s-set-context@v2
         with:
@@ -94,12 +100,20 @@ jobs:
         env:
           OWNER: "${{ github.repository_owner }}"
 
-      - name: 브랜치 기반 디플로이먼트 이름 설정
-        run: |
-          echo "DEPLOYMENT_NAME=${{ env.APP_NAME }}-${GITHUB_REF_NAME}-deployment" >> $GITHUB_ENV
-          echo "CONTAINER_NAME=${{ env.APP_NAME }}-${GITHUB_REF_NAME}" >> $GITHUB_ENV
-
       - name: 이미지 업데이트 및 출력
+        env:
+          IMAGE_TAG: ghcr.io/${{ env.OWNER_LC }}/${{ env.APP_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }}
         run: |
-          echo "kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.CONTAINER_NAME }}=ghcr.io/${{ env.OWNER_LC }}/${{ env.APP_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }}"
-          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.CONTAINER_NAME }}=ghcr.io/${{ env.OWNER_LC }}/${{ env.APP_NAME }}:${{ needs.makeTagAndRelease.outputs.tag_name }}
+          if [ "$BRANCH_NAME" = "main" ]; then
+            for i in $(seq 1 "$APP_COUNT"); do
+              DEPLOYMENT_NAME="${{ env.APP_NAME }}-app${i}-deployment"
+              CONTAINER_NAME="${{ env.APP_NAME }}-app${i}"
+              echo "kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG"
+              kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG
+            done
+          else
+            DEPLOYMENT_NAME="${{ env.APP_NAME }}-$BRANCH_NAME-deployment"
+            CONTAINER_NAME="${{ env.APP_NAME }}-$BRANCH_NAME"
+            echo "kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG"
+            kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG
+          fi
