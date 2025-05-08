@@ -109,14 +109,24 @@ jobs:
         run: |
           if [ "$BRANCH_NAME" = "main" ]; then
             for i in $(seq 1 "$APP_COUNT"); do
-              DEPLOYMENT_NAME="${{ env.APP_NAME }}-app${i}-deployment"
-              CONTAINER_NAME="${{ env.APP_NAME }}-app${i}"
-              echo "kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG"
-              kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG
+              DEPLOYMENT_NAME="${APP_NAME}-app${i}-deployment"
+              CONTAINER_NAME="${APP_NAME}-app${i}"
+              echo "🔍 Checking $DEPLOYMENT_NAME ..."
+              if kubectl get deployment "$DEPLOYMENT_NAME" > /dev/null 2>&1; then
+                echo "✅ $DEPLOYMENT_NAME exists. Updating image..."
+                kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_TAG"
+              else
+                echo "⚠️  $DEPLOYMENT_NAME not found. Skipping."
+              fi
             done
           else
-            DEPLOYMENT_NAME="${{ env.APP_NAME }}-$BRANCH_NAME-deployment"
-            CONTAINER_NAME="${{ env.APP_NAME }}-$BRANCH_NAME"
-            echo "kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG"
-            kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE_TAG
+            DEPLOYMENT_NAME="${APP_NAME}-${BRANCH_NAME}-deployment"
+            CONTAINER_NAME="${APP_NAME}-${BRANCH_NAME}"
+            echo "🔍 Checking $DEPLOYMENT_NAME ..."
+            if kubectl get deployment "$DEPLOYMENT_NAME" > /dev/null 2>&1; then
+              echo "✅ $DEPLOYMENT_NAME exists. Updating image..."
+              kubectl set image deployment/"$DEPLOYMENT_NAME" "$CONTAINER_NAME"="$IMAGE_TAG"
+            else
+              echo "⚠️  $DEPLOYMENT_NAME not found. Skipping."
+            fi
           fi
