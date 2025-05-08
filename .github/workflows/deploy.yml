@@ -17,6 +17,7 @@ on:
       - "app5"
       - "app6"
       - "app7"
+      - "app8"
 
 env:
   APP_NAME: grr-test
